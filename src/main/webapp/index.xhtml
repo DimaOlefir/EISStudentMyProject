@@ -1,0 +1,256 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://java.sun.com/jsf/html"
+      xmlns:f="http://java.sun.com/jsf/core"
+      xmlns:ui="http://java.sun.com/jsf/facelets"
+      xmlns:p="http://primefaces.org/ui">
+
+<h:head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+</h:head>
+<h:body>
+    <h1>View Student</h1>
+    <h:form id="studentCreateForm">
+        <h:panelGrid columns="1" style="text-align:right; width: 100%">
+            <p:commandButton actionListener="#{studentBean.create()}"
+                             update="studentEditForm"
+                             oncomplete="PF('studentDialog').show()"
+                             value="Add Student"/>
+        </h:panelGrid>
+    </h:form>
+
+    <h:form id="studentListForm">
+        <p:growl id="message" showDetail="true"/>
+        <p:dataTable id="customerTable" var="student"
+                     value="#{studentBean.students}"
+                     widgetVar="customerTable"
+                     emptyMessage="No Student found">
+            <p:column headerText="First Name">
+                <h:outputText value="#{student.firstname}"/>
+            </p:column>
+            <p:column headerText="Last Name">
+                <h:outputText value="#{student.lastname}"/>
+            </p:column>
+            <p:column headerText="Phone">
+                <h:outputText value="#{student.phone}"/>
+            </p:column>
+            <p:column headerText="Address">
+                <h:outputText value="#{student.city.name}"/>-
+                <h:outputText value="#{student.district.name}"/>
+            </p:column>
+            <p:column headerText="-">
+                <p:commandButton process="@this"
+                                 actionListener="#{studentBean.editStudent(student)}"
+                                 update="studentViewPanel"
+                                 oncomplete="PF('studentViewDialog').show()"
+                                 icon="ui-icon-zoomout"
+                                 title="View Student"/>
+                <p:commandButton process="@this"
+                                 actionListener="#{studentBean.editStudent(student)}"
+                                 update="studentEditForm, studentListForm"
+                                 oncomplete="PF('studentDialog').show()"
+                                 icon="ui-icon-pencil"
+                                 title="Edit Student"/>
+                <p:commandButton process="@this"
+                                 actionListener="#{fileBean.controlFilesStudent(student)}"
+                                 update="studentFilesPanel"
+                                 oncomplete="PF('studentFilesDialog').show()"
+                                 icon="ui-icon-folder-collapsed"
+                                 title="Student Files"/>
+                <p:commandButton process="@this" action="#{studentBean.delete(student)}"
+                                 update="studentListForm"
+                                 icon="ui-icon-trash"
+                                 title="Delete Student">
+                    <p:confirm header="Confirmation" message="Are you sure?" />
+                </p:commandButton>
+
+            </p:column>
+        </p:dataTable>
+    </h:form>
+
+    <p:confirmDialog global="true" showEffect="fade" hideEffect="fade">
+        <p:commandButton value="Yes" type="button"
+                         styleClass="ui-confirmdialog-yes" icon="ui-icon-check"/>
+        <p:commandButton value="No" type="button"
+                         styleClass="ui-confirmdialog-no" icon="ui-icon-close"/>
+    </p:confirmDialog>
+
+    <p:dialog header="Edit Student" id="studentDlg"
+              resizable="false" widgetVar="studentDialog"
+              modal="true" height="450px" width="400px">
+
+        <h:form id="studentEditForm">
+            <p:messages id="msgs"/>
+
+            <h:panelGrid columns="2" cellpadding="10">
+
+                <p:outputLabel for="firstname" value="First name:"/>
+                <p:inputText id="firstname"
+                             value="#{studentBean.student.firstname}"
+                             required="true">
+                    <f:validateLength maximum="30"/>
+                </p:inputText>
+
+                <p:outputLabel for="lastname" value="Last name:"/>
+                <p:inputText id="lastname"
+                             value="#{studentBean.student.lastname}"
+                             required="true">
+                    <f:validateLength maximum="50"/>
+                </p:inputText>
+
+                <p:outputLabel for="phone" value="Phone:"/>
+                <p:inputMask id="phone" value="#{studentBean.student.phone}"
+                             mask="(999) 999-9999" required="true">
+                    <f:validateLength maximum="20"/>
+                </p:inputMask>
+
+                <p:outputLabel for="city" value="City: "/>
+                <p:selectOneMenu id="city" value="#{studentBean.cityId}" required="true">
+                    <p:ajax update="district" process="city" event="change" listener="#{studentBean.onCityChange}"/>
+                    <f:selectItem itemLabel="Choose City"
+                                  itemValue="#{null}"/>
+                    <f:selectItems value="#{studentBean.cityList}"
+                                   var="c"
+                                   itemLabel="#{c.name}"
+                                   itemValue="#{c.id}"/>
+                </p:selectOneMenu>
+
+                <p:outputLabel for="district" value="District: "/>
+                <p:selectOneMenu id="district" value="#{studentBean.districtId}" required="true">
+                    <f:selectItem itemLabel="Choose District"
+                                  itemValue="#{null}"/>
+                    <f:selectItems value="#{studentBean.districtList}"
+                                   var="d"
+                                   itemLabel="#{d.name}"
+                                   itemValue="#{d.id}"/>
+                </p:selectOneMenu>
+
+                <p:outputLabel for="description" value="Description:"/>
+                <p:inputTextarea id="description"
+                                 value="#{studentBean.student.description}"
+                                 rows="5" cols="20">
+                    <f:validateLength maximum="200"/>
+                </p:inputTextarea>
+            </h:panelGrid>
+
+            <p:commandButton onclick="PF('studentDialog').hide()" title="Cancel" value="Cancel"/>
+
+            <p:commandButton actionListener="#{studentBean.saveOrUpdate()}"
+                             validateClient="true"
+                             update="studentListForm"
+                             oncomplete="if(!args.validationFailed) PF('studentDialog').hide()"
+                             title="Save"
+                             value="Save" style="float:right"/>
+        </h:form>
+
+    </p:dialog>
+
+    <p:dialog header="View Student" id="studentViewDlg"
+              widgetVar="studentViewDialog"
+               modal="true" height="205px" width="350px">
+
+        <h:panelGrid columns="2" id="studentViewPanel" cellPadding="10">
+
+            <p:outputLabel for="firstname" value="First name: " style="font-weight:bold"/>
+            <h:outputText id="firstname" value="#{studentBean.student.firstname}"/>
+
+            <p:outputLabel for="lastname" value="Last name: " style="font-weight:bold"/>
+            <h:outputText id="lastname" value="#{studentBean.student.lastname}"/>
+
+            <p:outputLabel for="phone" value="Phone: " style="font-weight:bold"/>
+            <h:outputText id="phone" value="#{studentBean.student.phone}"
+                          mask="(999) 999-9999"/>
+
+            <p:outputLabel for="city" value="City: " style="font-weight:bold"/>
+            <h:outputText id="city" value="#{studentBean.student.city.name}"/>
+
+            <p:outputLabel for="district" value="District: " style="font-weight:bold"/>
+            <h:outputText id="district" value="#{studentBean.student.district.name}"/>
+
+            <p:outputLabel for="description" value="Description: " style="font-weight:bold"/>
+            <h:outputText id="description" value="#{studentBean.student.description}"/>
+        </h:panelGrid>
+
+        <p:commandButton onclick="PF('studentViewDialog').hide()" title="Close" value="Close"
+                         style="float:right"/>
+
+    </p:dialog>
+
+    <p:dialog header="Student Files" id="studentFilesDialog"
+              widgetVar="studentFilesDialog"
+              resizable="false" modal="true" height="300px"  width="600px">
+
+        <p:panel id="studentFilesPanel">
+
+            <p:outputLabel for="student" value="Student:"/>
+            <h:outputText id="student" value="#{fileBean.student.firstname} #{fileBean.student.lastname}"/>
+
+            <h:form id="fileListForm">
+                <p:growl id="message" showDetail="true"/>
+                <p:dataTable id="fileTable" var="file"
+                             widgetVar="fileTable"
+                             value="#{fileBean.fileList}"
+                             emptyMessage="No Files found">
+                    <p:column headerText="File Name">
+                        <h:outputText value="#{file.name}"/>
+                    </p:column>
+                    <p:column headerText="Options">
+
+                        <p:commandButton ajax="false" onclick="PrimeFaces.monitorDownload(start, stop);"
+                                         icon="ui-icon-arrowthick-1-s">
+                            <p:fileDownload value="#{fileBean.download(file)}"/>
+                        </p:commandButton>
+
+                        <p:commandButton process="@this"
+                                         action="#{fileBean.deleteFile(file)}"
+                                         update="studentFilesPanel" icon="ui-icon-trash"
+                                         title="Delete File">
+                            <p:confirm header="Confirmation" message="Are you sure?" />
+                        </p:commandButton>
+
+                    </p:column>
+                </p:dataTable>
+            </h:form>
+        </p:panel>
+
+
+        <h:form enctype="multipart/form-data">
+            <p:growl id="messages" showDetail="true"/>
+            <p:fileUpload fileUploadListener="#{fileBean.upload}"
+                          mode="advanced"
+                          update="studentFilesPanel"
+                          allowTypes="/(\.|\/)(doc|docx|pdf|jpeg|png)$/"/>
+        </h:form>
+
+        <p:commandButton onclick="PF('studentFilesDialog').hide()"
+                         title="Close"
+                         value="Close"
+                         style="float:right"/>
+    </p:dialog>
+
+    <p:ajaxStatus style="display:block;margin-bottom:2em;height:24px;">
+        <f:facet name="default">
+        </f:facet>
+
+        <f:facet name="start">
+            <p:graphicImage name="/img/loader.gif"/>
+        </f:facet>
+
+        <f:facet name="complete">
+        </f:facet>
+    </p:ajaxStatus>
+
+    <p:ajaxStatus onstart="PF('statusDialog').show()" onsuccess="PF('statusDialog').hide()"/>
+
+    <p:dialog widgetVar="statusDialog" modal="true"
+              draggable="false"
+              closable="false"
+              resizable="false"
+              showHeader="false">
+        <p:graphicImage name="/img/loader.gif"/>
+    </p:dialog>
+
+</h:body>
+</html>
